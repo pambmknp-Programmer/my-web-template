@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Halaman – Philippine Plant Identifier</title>
+<style>
+:root{--bg:#f4f7ef;--card:#fff;--ink:#1d2a1c;--mut:#5d6b5a;--line:#d9e2d0;--acc:#2f7d3b;--accbg:#e1f0dc;--warn:#8a5a00;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);color-scheme:light}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#121a12;--card:#1b261b;--ink:#e8f0e4;--mut:#9fb09a;--line:#2f402f;--acc:#6fcf7c;--accbg:#223a24;--warn:#e6b34d;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#121a12;--card:#1b261b;--ink:#e8f0e4;--mut:#9fb09a;--line:#2f402f;--acc:#6fcf7c;--accbg:#223a24;--warn:#e6b34d;color-scheme:dark}
+*{box-sizing:border-box}html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.wrap{max-width:1000px;margin:0 auto;padding:20px 16px 40px}
+h1{margin:0;font-size:1.7rem}h1 span{color:var(--acc)}
+.sub{color:var(--mut);margin:4px 0 18px}
+.grid{display:grid;grid-template-columns:1fr;gap:16px}
+@media(min-width:800px){.grid{grid-template-columns:1fr 1fr;align-items:start}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px}
+.cat{margin-bottom:14px}.cat:last-child{margin-bottom:0}
+.cat h3{margin:0 0 2px;font-size:.95rem}.cat p{margin:0 0 6px;color:var(--mut);font-size:.8rem}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:999px;padding:6px 12px;font:inherit;font-size:.85rem;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--acc);border-color:var(--acc);color:#fff}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]) .chip[aria-pressed="true"]{color:#0c170d}}
+.bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;gap:8px}
+.bar b{font-size:1rem}
+.reset{border:1px solid var(--line);background:none;color:var(--mut);border-radius:8px;padding:5px 10px;font:inherit;font-size:.8rem;cursor:pointer}
+.res{border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:10px;background:var(--card)}
+.res h4{margin:0;font-size:1.05rem}.res i{color:var(--mut);font-size:.88rem}
+.top{display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+.pct{font-weight:700;color:var(--acc)}
+.meter{height:6px;background:var(--accbg);border-radius:4px;margin:6px 0 8px;overflow:hidden}.meter div{height:100%;background:var(--acc)}
+.tag{display:inline-block;font-size:.74rem;padding:2px 8px;border-radius:999px;margin:0 4px 4px 0;background:var(--accbg);color:var(--ink)}
+.tag.no{background:transparent;border:1px dashed var(--line);color:var(--mut);text-decoration:line-through}
+.note{font-size:.86rem;margin:4px 0 0}
+.res{display:flex;gap:12px}.rb{flex:1;min-width:0}.pic{flex:0 0 96px;width:96px;height:96px;border-radius:10px;background:var(--accbg)}
+.empty{color:var(--mut);text-align:center;padding:24px 8px}.pic.big{flex-basis:128px;width:128px;height:128px}.pic.wide{flex:0 0 150px;width:150px;height:112px}.det{font-size:.82rem;margin:6px 0 0}.det b{color:var(--acc)}.det small{color:var(--mut)}.det a{color:var(--acc)}
+.disc{font-size:.8rem;color:var(--warn);margin-top:18px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Hala<span>man</span> 🌿</h1>
+  <p class="sub">Identify common Philippine plants by their leaves, bark, stem and roots. Pick what you observe; matches update instantly.</p>
+  <div class="grid">
+    <div class="card" id="filters"></div>
+    <div>
+      <div class="bar"><b id="count"></b><button class="reset" id="reset">Clear all</button></div>
+      <div id="results"></div>
+    </div>
+  </div>
+  <p class="disc">⚠ This is a field-guide aid covering about 25 common species, not a definitive ID. Confirm with a botanist or local resource (DENR, PNM, UPLB) before using any plant for food or medicine.</p>
+</div>
+<script>
+var CATS=[
+{k:"g",t:"Plant group",h:"Narrow to a family",o:{dip:"Dipterocarps",fab:"Fabaceae (legumes)"}},
+{k:"f",t:"Growth form",h:"Overall shape of the plant",o:{tree:"Tree",shrub:"Shrub",palm:"Palm",vine:"Vine / creeper",herb:"Herb",grass:"Grass / bamboo"}},
+{k:"lt",t:"Leaf type",h:"Look at one whole leaf",o:{simple:"Simple (one blade)",pin:"Pinnate (leaflets on a stalk)",bip:"Bipinnate (leaflets of leaflets)",palm:"Palmate / fan",strap:"Long strap-like",tri:"Trifoliate (3 leaflets)"}},
+{k:"la",t:"Leaf arrangement",h:"How leaves attach to the twig",o:{alt:"Alternate (staggered)",opp:"Opposite (pairs)",spiral:"Spiral / clustered at tips"}},
+{k:"m",t:"Leaf edge",h:"Margin of leaf or leaflet",o:{smooth:"Smooth",toothed:"Toothed",spiny:"Spiny",lobed:"Lobed / split"}},
+{k:"b",t:"Bark / stem surface",h:"Trunk or main stem",o:{smooth:"Smooth",fissured:"Rough / fissured",flaky:"Flaky / peeling",thorny:"Thorny / spiny",ringed:"Ringed / jointed",soft:"Soft pseudostem / herbaceous"}},
+{k:"r",t:"Roots",h:"Visible root system",o:{buttress:"Buttress (plank-like)",stilt:"Stilt / prop",aerial:"Aerial / hanging",pneum:"Pencil-like breathing roots",tuber:"Tuber / corm",tap:"Taproot",fibrous:"Fibrous / shallow"}},
+{k:"s",t:"Sap",h:"Scratch or snap a twig",o:{latex:"Milky latex",red:"Red / blood-like",resin:"Sticky resin",none:"Clear / none"}},
+{k:"ls",t:"Leaf shape",h:"Outline of the blade",o:{elliptic:"Elliptic / oval",lanceolate:"Lanceolate (narrow)",ovate:"Ovate (egg-shaped)",oblong:"Oblong",bilobed:"Two-lobed (butterfly)"}},
+{k:"i",t:"Inflorescence",h:"How flowers are grouped",o:{rac:"Raceme (few flowers on one stalk)",pan:"Panicle (branched cluster)"}},
+{k:"w",t:"Fruit wings",h:"Winged nut, from enlarged sepals",o:{l2:"2 long + 3 short wings",l3:"3 long + 2 short wings",l0:"Wingless"}},
+{k:"ft",t:"Legume flower type",h:"For Fabaceae",o:{pea:"Pea-like (butterfly-shaped)",puff:"Puffball / fluffy spike",showy:"Showy spreading petals"}},
+{k:"fp",t:"Legume pod",h:"Fruit of the legume family",o:{flat:"Flat pod",cyl:"Long cylindrical pod",coil:"Coiled / twisted pod",wing:"Winged pod",ug:"Ripens underground"}}
+];
+var P=[
+{n:"Narra",l:"Pterocarpus indicus",loc:"Narra, Asana",f:["tree"],lt:["pin"],la:["alt"],m:["smooth"],b:["fissured"],r:["buttress","tap"],s:["red"],note:"National tree. Cutting a bark wound oozes red resin; golden flowers. Protected species."},
+{n:"Niyog (Coconut)",l:"Cocos nucifera",loc:"Niyog",f:["palm"],lt:["pin"],la:["spiral"],m:["smooth"],b:["ringed"],r:["fibrous"],s:["none"],note:"Unbranched gray trunk with ring scars and a crown of long feathery fronds."},
+{n:"Mangga (Mango)",l:"Mangifera indica",loc:"Mangga",f:["tree"],lt:["simple"],la:["alt"],m:["smooth"],b:["fissured"],r:["tap"],s:["latex"],note:"Dark glossy lance-shaped leaves; sap can irritate skin."},
+{n:"Saging (Banana)",l:"Musa spp.",loc:"Saging",f:["herb"],lt:["simple"],la:["spiral"],m:["smooth"],b:["soft"],r:["fibrous","tuber"],s:["none"],note:"“Trunk” is a pseudostem of tightly rolled leaf sheaths; leaves tear along side veins."},
+{n:"Kawayan (Bamboo)",l:"Bambusa spp.",loc:"Kawayan",f:["grass"],lt:["strap"],la:["alt"],m:["smooth"],b:["ringed"],r:["fibrous"],s:["none"],note:"Hollow, jointed culms with clear nodes, growing from rhizomes in clumps."},
+{n:"Bakawan (Red mangrove)",l:"Rhizophora spp.",loc:"Bakawan",f:["tree"],lt:["simple"],la:["opp"],m:["smooth"],b:["fissured"],r:["stilt"],s:["none"],note:"Arching stilt roots in tidal mud; long pencil-like seedlings hang from branches."},
+{n:"Api-api (Grey mangrove)",l:"Avicennia marina",loc:"Api-api",f:["tree"],lt:["simple"],la:["opp"],m:["smooth"],b:["flaky"],r:["pneum"],s:["none"],note:"Thousands of upright pneumatophores around the trunk; leaves often salt-crusted."},
+{n:"Balete (Weeping fig)",l:"Ficus benjamina",loc:"Balete",f:["tree"],lt:["simple"],la:["alt"],m:["smooth"],b:["smooth"],r:["aerial"],s:["latex"],note:"Strangler figs send aerial roots that fuse into a lattice trunk; milky latex."},
+{n:"Acacia (Rain tree)",l:"Samanea saman",loc:"Acacia",f:["tree"],lt:["bip"],la:["alt"],m:["smooth"],b:["fissured"],r:["fibrous"],s:["none"],note:"Huge umbrella crown; leaflets fold at night. Wide, shallow roots can lift pavement."},
+{n:"Mahogany (Large-leaf)",l:"Swietenia macrophylla",loc:"Mahogany",f:["tree"],lt:["pin"],la:["alt"],m:["smooth"],b:["flaky"],r:["buttress"],s:["none"],note:"Dark brown bark in scaly plates; woody five-valved seed capsules."},
+{n:"Gumamela (Hibiscus)",l:"Hibiscus rosa-sinensis",loc:"Gumamela",f:["shrub"],lt:["simple"],la:["alt"],m:["toothed"],b:["smooth"],r:["fibrous"],s:["none"],note:"Ovate glossy leaves with coarse teeth near the tip; large showy flowers."},
+{n:"Bayabas (Guava)",l:"Psidium guajava",loc:"Bayabas",f:["tree","shrub"],lt:["simple"],la:["opp"],m:["smooth"],b:["flaky"],r:["tap"],s:["none"],note:"Smooth mottled green-brown bark that peels in thin flakes; deeply veined leaves."},
+{n:"Malunggay (Moringa)",l:"Moringa oleifera",loc:"Malunggay",f:["tree"],lt:["bip"],la:["alt"],m:["smooth"],b:["fissured"],r:["tap"],s:["none"],note:"Feathery tripinnate leaves, soft corky bark, long ridged seed pods (“drumsticks”)."},
+{n:"Kamote (Sweet potato)",l:"Ipomoea batatas",loc:"Kamote",f:["vine"],lt:["simple"],la:["alt"],m:["lobed","smooth"],b:["soft"],r:["tuber"],s:["latex"],note:"Trailing vine with heart-shaped to lobed leaves and swollen storage roots."},
+{n:"Gabi (Taro)",l:"Colocasia esculenta",loc:"Gabi",f:["herb"],lt:["simple"],la:["spiral"],m:["smooth"],b:["soft"],r:["tuber"],s:["none"],note:"Large heart-shaped leaf with the stalk attached inside the blade (peltate). Raw corms irritate."},
+{n:"Pandan (Screwpine)",l:"Pandanus spp.",loc:"Pandan",f:["shrub","tree"],lt:["strap"],la:["spiral"],m:["spiny"],b:["ringed"],r:["stilt"],s:["none"],note:"Long leaves in spirals with tiny spines on edges and midrib; prop roots from the trunk."},
+{n:"Ipil-ipil",l:"Leucaena leucocephala",loc:"Ipil-ipil",f:["tree","shrub"],lt:["bip"],la:["alt"],m:["smooth"],b:["smooth"],r:["tap"],s:["none"],note:"Fine bipinnate leaves, white puffball flowers and flat brown pods."},
+{n:"Kalamansi",l:"Citrus × microcarpa",loc:"Kalamansi",f:["shrub","tree"],lt:["simple"],la:["alt"],m:["toothed"],b:["thorny"],r:["tap"],s:["none"],note:"Small oval leaves with a narrowly winged stalk; crushed leaves smell of citrus."},
+{n:"Kapok (Doldol)",l:"Ceiba pentandra",loc:"Kapok",f:["tree"],lt:["palm"],la:["alt"],m:["smooth"],b:["thorny"],r:["buttress"],s:["none"],note:"Tall tree with cone-shaped thorns on a green-gray trunk and tiered branches."},
+{n:"Talisay (Indian almond)",l:"Terminalia catappa",loc:"Talisay",f:["tree"],lt:["simple"],la:["spiral"],m:["smooth"],b:["fissured"],r:["fibrous"],s:["none"],note:"Big obovate leaves clustered at twig ends in tiers; leaves turn red before falling."},
+{n:"Anahaw (Fan palm)",l:"Saribus rotundifolius",loc:"Anahaw",f:["palm"],lt:["palm"],la:["spiral"],m:["lobed"],b:["ringed"],r:["fibrous"],s:["none"],note:"National leaf. Round, pleated fan leaves on long stalks; native to Philippine forests."},
+{n:"Papaya",l:"Carica papaya",loc:"Papaya",f:["tree","herb"],lt:["palm"],la:["spiral"],m:["lobed"],b:["ringed"],r:["tap"],s:["latex"],note:"Hollow unbranched trunk with leaf scars; deeply lobed leaves on long hollow stalks."},
+{n:"Sampaguita",l:"Jasminum sambac",loc:"Sampaguita",f:["shrub","vine"],lt:["simple"],la:["opp"],m:["smooth"],b:["smooth"],r:["fibrous"],s:["none"],note:"National flower. Oval opposite leaves and very fragrant white flowers."},
+{g:1,n:'Apitong',l:'Dipterocarpus grandiflorus',gen:'Dipterocarpus',note:'Major timber tree; oleoresin is tapped from the trunk.'},
+{g:1,n:'Hagakhak',l:'Dipterocarpus gracilis',gen:'Dipterocarpus',note:'Lowland member of the apitong group.'},
+{g:1,n:'Calimugon',l:'Dipterocarpus validus',gen:'Dipterocarpus',note:'Large forest tree of the apitong group.'},
+{g:1,n:'Dagkalan',l:'Dipterocarpus eurynchus',gen:'Dipterocarpus',note:'Tall tree with big ridged, winged fruits.'},
+{g:1,n:'Dipterocarpus hasseltii',l:'Dipterocarpus hasseltii',gen:'Dipterocarpus',note:'Recorded in limestone forest on Bohol.'},
+{g:1,n:'White lauan',l:'Shorea contorta',gen:'Shorea',note:'The classic lauan; buttressed trunk, fruit spins down like a helicopter.'},
+{g:1,n:'Red lauan',l:'Shorea negrosensis',gen:'Shorea',note:'Lauan group timber with darker red wood.'},
+{g:1,n:'Tanguile',l:'Shorea polysperma',gen:'Shorea',note:'Common lowland lauan-group (Philippine mahogany) tree.'},
+{g:1,n:'Almon',l:'Shorea almon',gen:'Shorea',note:'Lauan-group tree; on Bohol it grows off limestone.'},
+{g:1,n:'Mayapis (squamata)',l:'Shorea squamata',gen:'Shorea',note:'Mayapis; pale, lightweight timber.'},
+{g:1,n:'Mayapis (palosapis)',l:'Shorea palosapis',gen:'Shorea',note:'Also called mayapis; do not confuse with palosapis (Anisoptera).'},
+{g:1,n:'Guijo',l:'Shorea guiso',gen:'Shorea',note:'Very hard, durable timber used for posts and construction.'},
+{g:1,n:'Yakal-gisok',l:'Shorea astylosa',gen:'Shorea',note:'One of the yakal group of heavy, durable hardwoods.'},
+{g:1,n:'Tiaong',l:'Shorea polita',gen:'Shorea',note:'Recorded in limestone forest on Bohol.'},
+{g:1,n:'Yakal-saplungan',l:'Hopea plagata',gen:'Hopea',note:'Yakal group; very hard wood. Also placed in Shorea by some authors.'},
+{g:1,n:'Yakal-malibato',l:'Hopea malibato',gen:'Hopea',note:'Yakal group; treated as Shorea malibato in some lists.'},
+{g:1,n:'Manggachapui',l:'Hopea acuminata',gen:'Hopea',note:'Occurs in limestone forest on Bohol.'},
+{g:1,n:'Dalingdingan',l:'Hopea philippinensis',gen:'Hopea',note:'Occurs in limestone forest on Bohol.'},
+{g:1,n:'Hopea quisumbingiana',l:'Hopea quisumbingiana',gen:'Hopea',note:'Recorded in limestone forest on Bohol.'},
+{g:1,n:'Bagtikan',l:'Parashorea malaanonan',gen:'Parashorea',note:'Large buttressed tree of the red-mahogany group.'},
+{g:1,n:'Palosapis',l:'Anisoptera thurifera',gen:'Anisoptera',note:'Lowland tree that yields aromatic resin.'},
+{g:1,n:'Narig',l:'Vatica mangachapoi',gen:'Vatica',note:'Wingless fruit sets it apart from other dipterocarps.'}
+];
+var GEN={
+Dipterocarpus:{w:'l2',i:'rac',s:'resin',vn:12,ls:['ovate','oblong'],fc:'#e89ab5',lf:'Large (15-40 cm), ovate to oblong, edges entire or slightly wavy, with many prominent parallel side veins; big stipules leave ring scars on twigs.',inf:'Short raceme with few flowers, in the leaf axils.',fl:'Large (3-5 cm), pink to white, five twisted petals.',fr:'Nut inside a ridged calyx tube with 2 long wings and 3 short ones.'},
+Shorea:{w:'l3',i:'pan',s:'resin',vn:7,ls:['elliptic','oblong','lanceolate'],fc:'#f3e6a8',lf:'Simple, alternate, entire; oblong to elliptic-lanceolate with a pointed tip; stipules fall early.',inf:'Panicle, axillary or terminal.',fl:'Small (about 1 cm), cream to yellow, five twisted petals.',fr:'Nut with 3 long and 2 short wings (enlarged sepals).'},
+Hopea:{w:'l2',i:'pan',s:'resin',vn:8,ls:['elliptic','lanceolate'],fc:'#f6efc8',lf:'Small to medium, elliptic to lanceolate, often with tiny pits (domatia) in the vein angles and ladder-like cross-veins.',inf:'Panicle with one-sided branches, axillary or terminal.',fl:'Small, white to cream-yellow, five petals.',fr:'Nut with 2 long and 3 short wings.'},
+Parashorea:{w:'l3',i:'pan',s:'resin',vn:10,ls:['oblong','elliptic'],fc:'#f3e6a8',lf:'Large, oblong to elliptic, with strongly ladder-like cross-veins.',inf:'Panicle, terminal or axillary.',fl:'Small, whitish to yellow, five petals.',fr:'Nut with 3 long and 2 short wings.'},
+Anisoptera:{w:'l2',i:'pan',s:'resin',vn:9,ls:['ovate','oblong'],fc:'#f6efc8',lf:'Leathery, ovate to oblong, entire, with ladder-like cross-veins.',inf:'Panicle, terminal or axillary.',fl:'Small, cream-white, five petals.',fr:'Nut with 2 long wings and 3 short ones.'},
+Vatica:{w:'l0',i:'pan',s:'resin',vn:7,ls:['oblong','elliptic'],fc:'#f6efc8',lf:'Leathery, entire, oblong to elliptic, often scaly or hairy beneath.',inf:'Panicle, terminal or axillary.',fl:'Small, pale yellow to cream, five petals.',fr:'Rounded nut; calyx lobes short, so no true wings.'}
+};
+P.forEach(function(p){if(p.g){var g=GEN[p.gen];p.G=g;p.g=['dip'];p.f=['tree'];p.lt=['simple'];p.la=['alt'];p.m=['smooth'];p.b=['fissured','flaky'];p.r=['buttress'];p.s=[g.s];p.w=[g.w];p.i=[g.i];p.ls=g.ls}});
+function det(p){var X=p.X?'<p class="det"><b>Height:</b> '+p.X.h+'<br><b>Spatial arrangement:</b> '+p.X.sp+'<br><b>Environmental importance:</b> '+p.X.env+'</p>':'';X+='<p class="det"><a href="https://commons.wikimedia.org/w/index.php?search='+encodeURIComponent(p.l)+'&ns6=1" target="_blank" rel="noopener">View real photos of '+p.n+' ↗</a></p>';if(p.FD)return X+'<p class="det"><b>Leaf:</b> '+p.FD.lf+'<br><b>Flower and inflorescence:</b> '+p.FD.fl+'<br><b>Fruit (pod):</b> '+p.FD.fr+'</p><p class="det"><small>Drawing: leaf (left), flower (bottom), pod (right).</small></p>';if(!p.G)return X;var G=p.G;return X+'<p class="det"><b>Leaf:</b> '+G.lf+'<br><b>Inflorescence:</b> '+G.inf+'<br><b>Flower:</b> '+G.fl+'<br><b>Fruit:</b> '+G.fr+'</p><p class="det"><small>Drawing: leaf (left), flower (bottom left), inflorescence (bottom centre), fruit (right). Characters are genus-level.</small></p>'}
+function art2(p){
+ var G=p.G,c='#4a9a55',d='#2b6a36',B='#8a6240',W='#c8904a',o='<rect width="120" height="120" fill="#f1ead6"/>',i;
+ function ln(x,k,w){return '<path d="'+x+'" stroke="'+k+'" stroke-width="'+w+'" fill="none" stroke-linecap="round"/>'}
+ function wg(a,L){return '<path transform="rotate('+a+' 88 70)" d="M85 68Q82 '+(70-L/2)+' 88 '+(70-L)+'Q94 '+(70-L/2)+' 91 68Z" fill="'+W+'"/>'}
+ function dot(q,r){return '<circle cx="'+q[0]+'" cy="'+q[1]+'" r="'+r+'" fill="'+G.fc+'" stroke="#b08850" stroke-width=".4"/>'}
+ o+='<path d="M30 12Q54 50 30 94Q6 50 30 12Z" fill="'+c+'"/>'+ln('M30 12V94',d,1.2);
+ for(i=0;i<G.vn;i++){var y=24+i*(66/G.vn);o+=ln('M30 '+y+'L42 '+(y-6)+'M30 '+y+'L18 '+(y-6),d,.8)}
+ var w=p.w[0];
+ if(w==='l2')o+=wg(-14,50)+wg(14,50)+wg(-75,22)+wg(75,22)+wg(180,18);
+ else if(w==='l3')o+=wg(-32,50)+wg(0,54)+wg(32,50)+wg(-90,22)+wg(90,22);
+ else for(i=0;i<5;i++)o+=wg(i*72,10);
+ o+='<ellipse cx="88" cy="72" rx="'+(w==='l0'?11:8)+'" ry="'+(w==='l0'?11:10)+'" fill="'+B+'"/>';
+ for(i=0;i<5;i++)o+='<ellipse transform="rotate('+i*72+' 24 108)" cx="24" cy="101" rx="3.5" ry="6" fill="'+G.fc+'" stroke="#b08850" stroke-width=".4"/>';
+ o+='<circle cx="24" cy="108" r="2" fill="#e0a020"/>';
+ if(p.i[0]==='rac'){o+=ln('M50 114Q64 106 78 102',B,1.2);[[56,110],[64,106],[72,103],[78,101]].forEach(function(q){o+=dot(q,3)})}
+ else{o+=ln('M64 118V100M64 110L52 102M64 110L76 102M64 104L56 98M64 104L72 98',B,1.2);[[52,102],[76,102],[56,98],[72,98],[64,98]].forEach(function(q){o+=dot(q,2.4)})}
+ return '<svg class="pic big" viewBox="0 0 120 120" role="img" aria-label="Leaf, flower, inflorescence and fruit of '+p.n+'">'+o+'</svg>';
+}
+function art(p){
+ if(p.G)return art2(p);if(p.FD)return art3(p);
+ var G="#4a9a55",D="#2b6a36",B="#8a6240",f=p.f[0],lt=p.lt[0],o="",l=p.l;
+ function ln(d,c,w){return '<path d="'+d+'" stroke="'+c+'" stroke-width="'+w+'" fill="none" stroke-linecap="round"/>'}
+ function sh(d,c){return '<path d="'+d+'" fill="'+c+'"/>'}
+ o+='<rect x="0" y="92" width="120" height="28" fill="#7a5a3a" opacity=".4"/>';
+ if(has(p.r,"tap"))o+=ln("M60 92V116M60 100L48 110M60 104L72 113","#6b4a2e",2.5);
+ if(has(p.r,"fibrous"))o+=ln("M60 92L40 112M60 92L52 116M60 92L68 116M60 92L82 110","#6b4a2e",1.5);
+ if(has(p.r,"tuber"))o+='<ellipse cx="60" cy="105" rx="16" ry="9" fill="#b97a4c"/>';
+ if(has(p.r,"stilt"))o+=ln("M60 66Q30 70 26 94M60 66Q90 70 94 94M60 70Q50 80 46 94M60 70Q70 80 74 94",B,3);
+ if(has(p.r,"pneum"))o+=ln("M28 92V82M38 92V80M82 92V80M92 92V82M46 92V85M74 92V85",B,2.5);
+ if(has(p.r,"aerial"))o+=ln("M38 52V92M48 56V92M72 56V92M82 52V92",B,1.8);
+ if(l.indexOf("Carica")===0){o+=ln("M60 92V46","#a58a6a",7)+sh("M60 44Q30 24 14 40Q38 40 60 44Z",G)+sh("M60 44Q90 24 106 40Q82 40 60 44Z",G)+sh("M60 44Q46 16 60 8Q74 16 60 44Z",G)+'<circle cx="54" cy="52" r="4" fill="#f0a030"/><circle cx="66" cy="54" r="4" fill="#f0a030"/>'}
+ else if(l.indexOf("Colocasia")===0){o+=ln("M60 92V50",D,3)+sh("M60 72C26 62 30 24 60 36C90 24 94 62 60 72Z",G)}
+ else if(l.indexOf("Musa")===0){o+='<rect x="53" y="52" width="14" height="40" rx="4" fill="#9cc57c"/>'+sh("M60 52Q20 26 6 48Q34 46 60 52Z",G)+sh("M60 52Q100 26 114 48Q86 46 60 52Z",G)+sh("M60 52Q44 18 58 6Q74 18 60 52Z",D)}
+ else if(f==="palm"){
+  if(lt==="palm")o+=ln("M60 92V50",B,6)+sh("M60 48L26 38A38 38 0 0 1 94 38Z",G)+ln("M60 48L40 28M60 48L60 18M60 48L80 28",D,1.5);
+  else o+=ln("M58 92Q66 62 60 36",B,6)+ln("M60 36Q32 26 16 48M60 36Q38 14 22 24M60 36Q60 10 56 8M60 36Q82 14 98 24M60 36Q88 26 104 48",G,3.5);
+ }
+ else if(f==="grass")o+=ln("M45 92V22M60 92V12M75 92V26","#9bb04a",4)+ln("M40 70H50M40 45H50M55 60H65M55 35H65M70 66H80M70 42H80","#6c7d2c",2)+ln("M45 30Q30 24 22 32M60 20Q76 12 88 20M75 36Q92 32 100 40",G,2.5);
+ else if(f==="vine")o+=ln("M20 92Q35 60 55 75T90 50T106 28",D,2.5)+'<circle cx="35" cy="68" r="7" fill="'+G+'"/><circle cx="62" cy="72" r="7" fill="'+G+'"/><circle cx="86" cy="52" r="7" fill="'+G+'"/><circle cx="102" cy="34" r="7" fill="'+G+'"/>';
+ else if(f==="shrub"||f==="herb"){
+  if(lt==="strap")o+=ln("M60 90V60",B,5)+ln("M60 62Q28 44 10 56M60 62Q34 30 22 22M60 62Q60 24 66 12M60 62Q92 30 100 22M60 62Q92 44 110 56",G,3.5);
+  else o+=ln("M52 92V60M64 92V56M58 92V66",B,3)+'<circle cx="44" cy="62" r="18" fill="'+G+'"/><circle cx="72" cy="58" r="20" fill="'+D+'" opacity=".85"/><circle cx="58" cy="42" r="16" fill="'+G+'"/>';
+ }
+ else{
+  o+=has(p.r,"buttress")?sh("M42 92L55 66V50H65V66L78 92Z",B):sh("M54 92V50H66V92Z",B);
+  if(has(p.b,"thorny"))o+=ln("M56 60h1M63 66h1M57 74h1M64 82h1M58 86h1","#efe0b8",3);
+  if(has(p.b,"fissured"))o+=ln("M57 54V88M63 58V86","#5a3d24",1.2);
+  if(has(p.b,"flaky"))o+=ln("M56 60h5M62 72h4M57 82h5","#c9a77b",2);
+  if(has(p.s,"red"))o+='<circle cx="60" cy="72" r="2.6" fill="#b3261e"/>';
+  o+=lt==="bip"?sh("M10 38Q60 4 110 38Q60 54 10 38Z",G)+ln("M20 38Q60 14 100 38","#7cc084",2):'<ellipse cx="60" cy="38" rx="34" ry="28" fill="'+G+'"/><ellipse cx="46" cy="32" rx="18" ry="14" fill="'+D+'" opacity=".35"/>';
+ }
+ return '<svg class="pic" viewBox="0 0 120 120" role="img" aria-label="Illustration of '+p.n+'">'+o+'</svg>';
+}
+var INFO={
+'Pterocarpus indicus':{h:'Up to 30-35 m; trunk 1-2 m wide',sp:'Wide-spreading rounded crown; scattered in lowland forest and often planted as a roadside or shade tree with generous spacing.',env:'A legume that enriches soil, shades streets and slopes, and feeds pollinators. Protected: cutting needs a permit.'},
+'Cocos nucifera':{h:'15-25 m',sp:'Single unbranched trunk with a crown of long fronds; grown in coastal groves at wide spacing.',env:'Holds sandy shores, tolerates wind and salt, and its husks and fronds are used for mulch and erosion nets.'},
+'Mangifera indica':{h:'10-30 m',sp:'Dense dome-shaped crown; grown as widely spaced orchard or yard trees.',env:'Shade and cooling; fruit and flowers feed birds, bats and insects.'},
+'Musa spp.':{h:'2-8 m',sp:'Grows in clumps: a mother plant surrounded by suckers, in backyards and plantations.',env:'Good soil cover; leaf litter returns moisture and nutrients; fruit is food for wildlife.'},
+'Bambusa spp.':{h:'10-25 m depending on species',sp:'Dense clumps from underground rhizomes, with culms crowded tightly together.',env:'Stabilises riverbanks and slopes, protects watersheds, grows fast, and shelters birds and small animals.'},
+'Rhizophora spp.':{h:'5-25 m',sp:'Forms dense belts on the seaward side of mangroves, with interlocking stilt roots.',env:'Buffers storms and waves, nurses fish and crabs, traps sediment and stores carbon.'},
+'Avicennia marina':{h:'5-20 m',sp:'Pioneer at the muddy seaward edge; breathing roots carpet the ground around each tree.',env:'Stabilises soft mud, builds new land, nurses young fish and tolerates high salinity.'},
+'Ficus benjamina':{h:'10-30 m',sp:'Broad spreading crown with curtains of aerial roots; often a solitary old tree.',env:'A keystone fruit tree that feeds birds and bats year-round; locally treated as a sacred tree.'},
+'Samanea saman':{h:'15-25 m, crown can spread wider than the tree is tall',sp:'Huge umbrella crown; planted with very wide spacing in parks and roadsides.',env:'Cooling shade, nitrogen-fixing, habitat for epiphytes and birds; surface roots can lift pavement.'},
+'Swietenia macrophylla':{h:'30-40 m',sp:'Straight trunk with a rounded crown; planted in rows in reforestation plots.',env:'Widely used in reforestation but introduced from tropical America, not a native species.'},
+'Hibiscus rosa-sinensis':{h:'1-4 m',sp:'Upright, bushy shrub; often planted in rows as a hedge.',env:'Flowers provide nectar for butterflies, bees and sunbirds.'},
+'Psidium guajava':{h:'3-10 m',sp:'Small branching tree, scattered in yards and pastures, sometimes forming thickets.',env:'Fruit feeds birds and bats; can spread as a weed in open land.'},
+'Moringa oleifera':{h:'5-10 m (often pruned to 2-3 m)',sp:'Open crown; planted along fences and yard edges.',env:'Drought tolerant, fast regrowing, and a source of nutritious leaves and green manure.'},
+'Ipomoea batatas':{h:'Vines 1-3 m long',sp:'Ground-covering creeper that spreads from planted cuttings.',env:'Dense cover reduces soil erosion; a resilient food crop in poor soils.'},
+'Colocasia esculenta':{h:'0.5-1.5 m',sp:'Grows in clumps in wet or flooded plots and along streams.',env:'Thrives in wetlands, holds wet soil and provides food during dry or typhoon years.'},
+'Pandanus spp.':{h:'3-8 m',sp:'Sprawling thickets near the coast, supported by stilt roots.',env:'Binds sandy shores and shelters coastal wildlife; leaves are used for weaving.'},
+'Leucaena leucocephala':{h:'5-20 m',sp:'Fast-growing, forms dense thickets in open and disturbed land.',env:'Fixes nitrogen and gives fodder, but can become invasive.'},
+'Citrus × microcarpa':{h:'2-6 m',sp:'Compact rounded shrub or small tree, planted with moderate spacing.',env:'Flowers attract bees and other pollinators.'},
+'Ceiba pentandra':{h:'30-50 m',sp:'Tall emergent tree with horizontal tiered branches and buttresses.',env:'Flowers are visited by bats and insects; large trunk and crown are habitat for birds and epiphytes.'},
+'Terminalia catappa':{h:'10-25 m',sp:'Pagoda-like tiers of horizontal branches; common along beaches and roadsides.',env:'Salt-tolerant coastal shade and windbreak; fruit eaten by bats and birds.'},
+'Saribus rotundifolius':{h:'10-20 m',sp:'Single-stemmed, scattered in lowland and foothill forest.',env:'Part of forest understory and watershed cover; a symbol of native forest.'},
+'Carica papaya':{h:'3-10 m',sp:'Single hollow trunk; planted loosely in yards and farms.',env:'Short-lived, fast fruiting; fruit feeds birds and bats.'},
+'Jasminum sambac':{h:'1-3 m',sp:'Bushy or sprawling shrub; planted in rows or pots.',env:'Fragrant flowers provide nectar for insects.'}
+};
+var GX={
+Dipterocarpus:{h:'Typically 40-60 m, with a straight clear trunk of 20-30 m (varies by species)',sp:'Emergent or upper-canopy tree, scattered at low density in lowland mixed dipterocarp forest; buttressed base.',env:'Part of the dominant canopy of lowland rainforest: stores carbon, shelters canopy wildlife and holds watershed soils. Heavy logging has made several species threatened.'},
+Shorea:{h:'Typically 30-60 m (varies by species)',sp:'Canopy to emergent giants with straight trunks, forming much of the lowland mixed dipterocarp forest; fruits irregularly in mass years.',env:'Defines forest structure, stores large amounts of carbon, feeds and shelters wildlife. Intensive logging of lauan, yakal and related timber has threatened many species.'},
+Hopea:{h:'Typically 20-40 m (varies by species)',sp:'Mid- to upper-canopy tree, slow-growing; some species grow on ridges and limestone.',env:'Contributes to forest structure and soil protection. Very hard, durable wood has led to overharvest, so several species are threatened.'},
+Parashorea:{h:'Typically 40-60 m',sp:'Large buttressed canopy tree in lowland forest.',env:'Giant canopy tree that stores carbon and shelters wildlife; a prime timber species, so natural stands have been heavily logged.'},
+Anisoptera:{h:'Typically 40-50 m',sp:'Tall canopy tree with a straight trunk, scattered in lowland forest.',env:'Canopy habitat and carbon store; the aromatic resin protects the tree and is harvested locally.'},
+Vatica:{h:'Typically 15-30 m',sp:'Lower to mid-canopy tree, often in forest on limestone and ridges.',env:'Adds to forest structure and understory habitat; its small crown fruits feed forest animals.'}
+};
+P.forEach(function(p){p.X=p.G?GX[p.gen]:INFO[p.l]});
+function F(n,l,f,lt,ls,ft,fp,fc,b,r,h,sp,env,lf,fl,fr,note){return {n:n,l:l,g:['fab'],f:[f],lt:[lt],la:['alt'],m:['smooth'],b:b.split(','),r:r.split(','),s:['none'],ls:[ls],ft:[ft],fp:[fp],fc:fc,note:note,X:{h:h,sp:sp,env:env},FD:{lf:lf,fl:fl,fr:fr}}}
+var EX={'Pterocarpus indicus':['pea','wing','#f2c230'],'Samanea saman':['puff','flat','#e890a8'],'Leucaena leucocephala':['puff','flat','#e6dca8']};
+P.forEach(function(p){var e=EX[p.l];if(e){p.g=['fab'];p.ft=[e[0]];p.fp=[e[1]];p.fc=e[2]}});
+[
+F('Acacia (Auri)','Acacia auriculiformis','tree','simple','lanceolate','puff','coil','#f2c230','fissured','tap,fibrous','15-30 m','Fast-growing, irregular rounded crown; planted in rows or blocks for reforestation and often spreads onto open land.','Fixes nitrogen and tolerates poor, eroded soils, so it is used to cover bare land; it can spread aggressively in disturbed areas.','Phyllodes (flattened leaf stalks acting as leaves), sickle-shaped, with several lengthwise veins.','Yellow spikes in axillary clusters.','Flat pod that twists into a coil when ripe.','Introduced from Australia; the leaves are phyllodes, not true compound leaves.'),
+F('Kakawate','Gliricidia sepium','tree','pin','elliptic','pea','flat','#d98ab8','smooth','tap,fibrous','5-10 m','Small, often multi-stemmed tree planted in lines as a living fence or hedgerow.','Fixes nitrogen; leaves make green manure and fodder, and the tree shades crops and holds soil on slopes.','Pinnate with 7-17 elliptic leaflets and a terminal leaflet.','Pink to lilac pea-shaped flowers in racemes on bare branches in the dry season.','Flat green-to-brown pod, 10-15 cm, that splits open.','Introduced from tropical America; a classic living fence post.'),
+F('Ipil','Intsia bijuga','tree','pin','elliptic','showy','flat','#f3c0cc','flaky','buttress,tap','20-40 m','Large spreading tree with a buttressed base; native to beach and lowland forest near the coast.','Hardwood prized for its durability; stabilises coastal soils and shelters wildlife. Overharvest has reduced wild stands.','Paripinnate, usually 2-4 pairs of glossy elliptic, asymmetric leaflets and no terminal leaflet.','Whitish to pinkish fragrant flowers in terminal panicles.','Large, flat, woody, oblong pod that splits to release flat brown seeds.','Heavy, durable timber; look for it in coastal forest.'),
+F('Bani','Pongamia pinnata','tree','pin','ovate','pea','flat','#e8b0d0','smooth','tap,fibrous','15-25 m','Spreading crown with drooping branches; common on seashores and along rivers.','Fixes nitrogen, tolerates salt and drought, and protects shorelines.','Pinnate, usually 5-7 glossy ovate leaflets with a terminal leaflet.','White to pinkish-purple pea flowers in drooping racemes.','Flat, woody, oval pod holding one seed; it does not split open.','Salt-tolerant seashore tree, also called Indian beech.'),
+F('Fire tree','Delonix regia','tree','bip','oblong','showy','flat','#e0452d','smooth','buttress,fibrous','10-15 m','Broad umbrella crown wider than tall; planted as a street and park tree with wide spacing.','Dense shade and nectar for insects; shallow roots can lift pavement. Introduced from Madagascar; not a nitrogen fixer.','Bipinnate with 10-20 pairs of pinnae, each with many tiny oblong leaflets.','Large scarlet-orange flowers with one white-yellow spotted petal, in showy clusters.','Very long (up to 60 cm), flat, woody, dark pod that rattles when dry.','Introduced ornamental that blooms in the hot season.'),
+F('Golden shower','Cassia fistula','tree','pin','ovate','showy','cyl','#f2c830','smooth','tap,fibrous','8-15 m','Round, open crown; planted as a street or garden tree with moderate spacing.','Flowers feed bees and other pollinators; not a nitrogen fixer.','Pinnate with 4-8 pairs of large ovate leaflets and no terminal leaflet.','Bright yellow flowers in long drooping racemes up to 40 cm.','Long, dark brown cylindrical pod (30-60 cm), divided by cross-partitions and filled with sweet black pulp.','Grown for its showy flowering; the pulp is used in traditional medicine.'),
+F('Sampalok','Tamarindus indica','tree','pin','oblong','showy','cyl','#f0b840','fissured','tap,fibrous','12-25 m','Dense rounded crown on a thick trunk; planted as shade and orchard trees at wide spacing.','Long-lived, drought-tolerant shade tree; flowers and fruit feed bees, birds and bats. Not a nitrogen fixer.','Paripinnate with 10-20 pairs of small oblong leaflets that fold at night.','Small yellow flowers with red veins in short racemes.','Brown, curved, nearly cylindrical pod with sour sticky pulp around the seeds.','The pulp is the souring ingredient in sinigang.'),
+F('Falcata','Falcataria falcata','tree','bip','oblong','puff','flat','#e8d078','smooth','buttress,fibrous','30-45 m','Tall straight trunk with a flat, umbrella-like crown; planted in dense plantations for pulp and light timber.','Very fast-growing and nitrogen-fixing, so it quickly restores degraded land; brittle branches and shallow roots can fail in strong typhoons.','Bipinnate with many pairs of pinnae, each carrying small oblong leaflets.','Creamy white to yellowish fluffy spikes in axillary panicles.','Flat, papery, narrow pod about 10 cm long.','Introduced from Indonesia; widely planted for plywood and pulp.'),
+F('Langil','Albizia lebbeck','tree','bip','oblong','puff','flat','#c8dc9c','fissured','tap,fibrous','12-25 m','Spreading crown; planted along roads and in pastures at wide spacing.','Fixes nitrogen, gives shade and fodder, and holds soil on slopes; it can spread on open land.','Bipinnate with 2-4 pairs of pinnae, each with 4-9 pairs of oblong leaflets.','Greenish-white, fragrant puffballs of long stamens.','Flat, papery, straw-coloured pod that rattles in the wind.','Its rattling pods earned it the name woman tongue tree.'),
+F('Makahiya','Mimosa pudica','herb','bip','oblong','puff','flat','#f09ac0','soft,thorny','tap,fibrous','10-50 cm','Low creeping herb that forms mats on lawns and roadsides; stems are prickly.','Fixes nitrogen and covers bare soil, but is a weed in crops and pastures.','Bipinnate with 1-2 pairs of pinnae of many tiny leaflets that fold when touched.','Small pink to purple fluffy balls on short stalks.','Small flat pods in clusters, divided into segments and bristly at the edges.','The sensitive plant: leaves fold shut when touched.'),
+F('Mani (Peanut)','Arachis hypogaea','herb','pin','ovate','pea','ug','#f2c230','soft','tap','30-50 cm','Low bushy or trailing herb planted in rows; pods form underground.','Fixes nitrogen and enriches soil in crop rotations; a key food and oil crop.','Pinnate with 2 pairs of ovate leaflets (4 in total).','Small yellow pea flowers near the base; after pollination the stalk pushes the ovary into the soil.','Wrinkled pod that ripens underground (geocarpy).','The pods develop below ground.'),
+F('Sitaw','Vigna unguiculata','vine','tri','ovate','pea','cyl','#d8c4e8','soft','tap,fibrous','Twining vine 2-4 m','Climbs trellises or poles; planted in rows in vegetable gardens.','Fixes nitrogen and tolerates dry spells; a staple vegetable.','Trifoliate with ovate pointed leaflets.','White to pale violet pea flowers in short racemes.','Very long, thin, cylindrical pod (30-80 cm).','Yardlong bean or string bean.'),
+F('Monggo','Vigna radiata','herb','tri','ovate','pea','cyl','#f2d040','soft','tap,fibrous','30-80 cm','Erect or semi-climbing bushy herb planted in dense rows.','Fixes nitrogen; a short-season crop that fits well after rice.','Trifoliate with ovate leaflets.','Small yellow pea flowers in clusters.','Narrow, cylindrical, hairy pod 6-10 cm long that turns black when dry.','Mung bean.'),
+F('Sigarilyas','Psophocarpus tetragonolobus','vine','tri','ovate','pea','wing','#a8c8f0','soft','tuber,tap','Twining vine 2-4 m','Climbs trellises; planted in rows or along fences.','Fixes nitrogen and grows well in humid climates; leaves, pods and roots are all edible.','Trifoliate with ovate to triangular leaflets.','Pale blue to violet pea flowers in few-flowered racemes.','Green pod with four frilly wings along its length.','Winged bean; the four-winged pod is unmistakable.'),
+F('Singkamas','Pachyrhizus erosus','vine','tri','ovate','pea','flat','#c8a8e0','soft','tuber','Twining vine 2-5 m','Sprawling or climbing vine planted in rows for its tuber.','Fixes nitrogen and gives food from poor soils.','Trifoliate, ovate leaflets often with a few teeth or lobes.','Pale violet pea flowers in long racemes.','Flat, hairy pod; the seeds are poisonous.','Jicama; the swollen root is eaten raw, but pods and seeds are toxic.'),
+F('Dapdap','Erythrina variegata','tree','tri','ovate','pea','cyl','#d8302a','thorny','tap,fibrous','10-20 m','Open, spreading crown with prickly branches; common on coasts and lowlands, often as living fence posts.','Fixes nitrogen and shades crops and coastal soils; red flowers attract nectar-feeding birds and insects.','Trifoliate with large, broad ovate leaflets.','Bright red pea flowers in dense terminal racemes on bare branches.','Black cylindrical pod, constricted between the seeds, with red seeds.','Coral tree; small prickles cover the trunk.'),
+F('Peacock flower','Caesalpinia pulcherrima','shrub','bip','oblong','showy','flat','#f08030','thorny','tap,fibrous','2-4 m','Open branching shrub used as a hedge or garden specimen with spaced planting.','Flowers attract butterflies and sunbirds; heat tolerant. Not a nitrogen fixer.','Bipinnate with 6-12 pairs of pinnae and tiny oblong leaflets.','Showy orange-red and yellow flowers with long red stamens, in racemes.','Flat pod, 6-12 cm, that splits open.','Also called pride of Barbados.'),
+F('Copperpod','Peltophorum pterocarpum','tree','bip','oblong','showy','wing','#f2cc30','fissured','buttress,fibrous','10-20 m','Spreading, umbrella-shaped crown; planted along roads with wide spacing.','Shade and heavy flowering for bees; shallow roots can lift pavement. Not a nitrogen fixer.','Bipinnate with 8-15 pairs of pinnae, each with many small oblong leaflets.','Golden-yellow, crinkled, fragrant flowers in large erect panicles.','Flat, winged, lens-shaped pod that turns from green to copper-brown.','Also called yellow flame tree.'),
+F('Kamachile','Pithecellobium dulce','tree','bip','oblong','puff','coil','#e6dca8','thorny','tap,fibrous','8-15 m','Spreading crown with spiny twigs; forms thickets in dry open land and is used as a hedge.','Fixes nitrogen, tolerates drought and poor soils, and feeds birds and bats; it can become invasive.','Bipinnate with only 1 pair of pinnae, each with 1 pair of oblong leaflets (4 in all); paired spines at the nodes.','Small cream-white puffball heads in terminal clusters.','Coiled, twisted pod that splits to show black seeds in a white or pink sweet pulp.','Manila tamarind; introduced from tropical America.'),
+F('Orchid tree','Bauhinia purpurea','tree','simple','bilobed','showy','flat','#d070b0','smooth','tap,fibrous','5-12 m','Rounded crown; planted as roadside and garden tree.','Showy flowers feed bees and butterflies and the tree shades streets. Not a nitrogen fixer.','Simple, deeply two-lobed like a butterfly wing, with several veins from the base.','Pink to purple orchid-like flowers with five petals, in loose racemes.','Long flat pod, 15-30 cm, that splits when dry.','The butterfly-shaped leaf is the key feature.'),
+F('Akapulko','Senna alata','shrub','pin','oblong','showy','wing','#f2c020','smooth','tap,fibrous','1.5-4 m','Erect branching shrub; grows in clumps on moist, disturbed ground and in yards.','Flowers feed bees; common on disturbed ground; traditionally used for skin conditions. Not a nitrogen fixer.','Large pinnate leaves with 8-14 pairs of oblong leaflets.','Bright yellow flowers in tall, candle-like erect racemes.','Dark, flat pod with a wing along each side.','Candle bush, a traditional medicinal plant.'),
+F('Kadios','Cajanus cajan','shrub','tri','lanceolate','pea','flat','#f2d040','smooth','tap','1-3 m','Erect woody shrub planted in rows or along field borders.','Fixes nitrogen; the deep taproot tolerates drought and improves poor soils.','Trifoliate with lanceolate leaflets, silky beneath.','Yellow pea flowers, often with red veins, in short racemes.','Flat, pointed pod with several seeds.','Pigeon pea; the seeds are eaten in the Visayan dish KBL.')
+].forEach(function(x){P.push(x)});
+function art3(p){
+ var c='#4a9a55',d='#2b6a36',B='#8a5a30',fc=p.fc,lt=p.lt[0],ft=p.ft[0],fp=p.fp[0],o='<rect width="120" height="120" fill="#f1ead6"/>',i,y;
+ function ln(x,k,w,e){return '<path d="'+x+'" stroke="'+k+'" stroke-width="'+w+'" fill="none" stroke-linecap="round"'+(e||'')+'/>'}
+ function el(cx,cy,rx,ry,a,k){return '<ellipse cx="'+cx+'" cy="'+cy+'" rx="'+rx+'" ry="'+ry+'" transform="rotate('+a+' '+cx+' '+cy+')" fill="'+k+'"/>'}
+ if(lt==='pin'){o+=ln('M32 90V12',d,1.5);for(i=0;i<5;i++){y=24+i*14;o+=el(21,y-3,10,4.5,-25,c)+el(43,y-3,10,4.5,25,c)}o+=el(32,12,5,3.5,90,c)}
+ else if(lt==='bip'){o+=ln('M32 90V12',d,1.5);[28,48,68].forEach(function(y){o+=ln('M32 '+y+'L8 '+(y-12)+'M32 '+y+'L56 '+(y-12),c,4,' stroke-dasharray="3 1.5"')})}
+ else if(lt==='tri'){o+=ln('M32 92V60M32 60L18 54M32 60L46 54',d,1.5)+el(32,32,11,17,0,c)+el(16,56,9,14,70,c)+el(48,56,9,14,-70,c)}
+ else if(lt==='simple'&&p.ls[0]==='bilobed')o+='<path d="M32 84C6 76 0 30 22 22C28 20 32 34 32 42C32 34 36 20 42 22C64 30 58 76 32 84Z" fill="'+c+'"/>'+ln('M32 84V44',d,1.2);
+ else o+='<path d="M32 12Q58 50 32 90Q6 50 32 12Z" fill="'+c+'"/>'+ln('M32 12V90',d,1.2);
+ if(fp==='flat'){o+='<rect x="84" y="12" width="15" height="76" rx="7" fill="'+B+'"/>';[24,38,52,66,78].forEach(function(y){o+='<circle cx="91.5" cy="'+y+'" r="3" fill="#d9b37a"/>'})}
+ else if(fp==='cyl')o+=ln('M90 10Q100 50 88 90',B,7);
+ else if(fp==='coil')o+=ln('M78 18C112 16 112 50 92 50C70 50 72 82 104 80',B,6);
+ else if(fp==='wing')o+='<path d="M90 10Q80 24 90 38Q80 52 90 66Q80 80 90 90L100 90Q110 78 100 66Q110 52 100 38Q110 24 100 10Z" fill="'+B+'"/>';
+ else o+='<rect x="66" y="76" width="54" height="44" fill="#7a5a3a" opacity=".5"/>'+el(88,96,9,6,-20,'#d8b878')+el(102,106,9,6,20,'#d8b878')+ln('M92 76V90',c,2);
+ if(ft==='pea')o+=el(52,98,6,7,0,fc)+el(45,107,5,4,-30,fc)+el(59,107,5,4,30,fc)+el(52,113,3,3.5,0,'#fff');
+ else if(ft==='puff'){for(i=0;i<14;i++)o+=ln('M52 106L'+(52+11*Math.cos(i*Math.PI/7)).toFixed(1)+' '+(106+11*Math.sin(i*Math.PI/7)).toFixed(1),fc,1.8);o+='<circle cx="52" cy="106" r="3" fill="'+fc+'"/>'}
+ else{for(i=0;i<5;i++)o+='<ellipse transform="rotate('+i*72+' 52 106)" cx="52" cy="98" rx="4.5" ry="7" fill="'+fc+'"/>';o+='<circle cx="52" cy="106" r="2" fill="#e0a020"/>'}
+ return '<svg class="pic big" viewBox="0 0 120 120" role="img" aria-label="Leaf, flower and pod of '+p.n+'">'+o+'</svg>';
+}
+function art(p){
+var s=0,i,k,x,y,n=p.n+p.l,f0=p.f[0],lt=p.lt[0],o,cx=52,GY=106;
+for(i=0;i<n.length;i++)s=(s*31+n.charCodeAt(i))>>>0;
+function R(){s=(s*1664525+1013904223)>>>0;return s/4294967296}
+function L(d,c,w,e){return '<path d="'+d+'" fill="none" stroke="'+c+'" stroke-width="'+w+'" stroke-linecap="round"'+(e||'')+'/>'}
+function Q(d,f,e){return '<path d="'+d+'" fill="'+f+'"'+(e||'')+'/>'}
+function C(x,y,r,c,op){return '<circle cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" r="'+r.toFixed(1)+'" fill="'+c+'" opacity="'+(op||1)+'"/>'}
+function lf(x,y,l,w,a,f){return '<g transform="translate('+x.toFixed(1)+' '+y.toFixed(1)+') rotate('+a.toFixed(0)+')">'+Q('M0 0C'+l*.2+' '+-w+' '+l*.7+' '+-w*.9+' '+l+' 0C'+l*.7+' '+w*.9+' '+l*.2+' '+w+' 0 0Z',f||'url(#lf)',' stroke="#245c2c" stroke-width=".3"')+L('M0 0L'+(l*.95).toFixed(1)+' 0','#e4f2c4',.4)+'</g>'}
+function frond(x0,y0,qx,qy,x1,y1,len){var r=L('M'+x0+' '+y0+'Q'+qx+' '+qy+' '+x1+' '+y1,'#1f6a35',1.5),t,u,px,py,dx,dy,d,nx,ny,ll;for(t=.12;t<1;t+=.055){u=1-t;px=u*u*x0+2*u*t*qx+t*t*x1;py=u*u*y0+2*u*t*qy+t*t*y1;dx=2*u*(qx-x0)+2*t*(x1-qx);dy=2*u*(qy-y0)+2*t*(y1-qy);d=Math.sqrt(dx*dx+dy*dy)||1;nx=-dy/d;ny=dx/d;ll=len*(1-t*.5);var tx=dx/d,ty=dy/d,k1=ll*.85,k2=ll*.45;r+=L('M'+px.toFixed(1)+' '+py.toFixed(1)+'l'+(tx*k1+nx*k2).toFixed(1)+' '+(ty*k1+ny*k2+ll*.3).toFixed(1)+'M'+px.toFixed(1)+' '+py.toFixed(1)+'l'+(tx*k1-nx*k2).toFixed(1)+' '+(ty*k1-ny*k2+ll*.3).toFixed(1),'#2f8a40',1.2)}return r}
+function cl(x0,y0,qx,qy,x1,y1,w,f,vn){var up='',dn='',vv='',t,u,px,py,dx,dy,d,nx,ny,wd;for(t=0;t<=1.001;t+=.1){u=1-t;px=u*u*x0+2*u*t*qx+t*t*x1;py=u*u*y0+2*u*t*qy+t*t*y1;dx=2*u*(qx-x0)+2*t*(x1-qx);dy=2*u*(qy-y0)+2*t*(y1-qy);d=Math.sqrt(dx*dx+dy*dy)||1;nx=-dy/d;ny=dx/d;wd=w*Math.sin(Math.PI*Math.min(1,t*.95+.05))*(1-.2*t);up+=(t===0?'M':'L')+(px+nx*wd).toFixed(1)+' '+(py+ny*wd).toFixed(1);dn='L'+(px-nx*wd).toFixed(1)+' '+(py-ny*wd).toFixed(1)+dn;if(vn&&t>.06&&t<.94)vv+='M'+px.toFixed(1)+' '+py.toFixed(1)+'L'+(px+nx*wd+dx/d*2.5).toFixed(1)+' '+(py+ny*wd+dy/d*2.5).toFixed(1)+'M'+px.toFixed(1)+' '+py.toFixed(1)+'L'+(px-nx*wd+dx/d*2.5).toFixed(1)+' '+(py-ny*wd+dy/d*2.5).toFixed(1)}return Q(up+dn+'Z',f||'url(#lf)',' stroke="#245c2c" stroke-width=".3"')+(vn?L(vv,'#2f7a3a',.3):'')+L('M'+x0+' '+y0+'Q'+qx+' '+qy+' '+x1+' '+y1,'#d8ecb8',.5)}
+function bl(x0,y0,qx,qy,x1,y1,w,f){var up='',dn='',vv='',t,u,px,py,dx,dy,d,nx,ny,wd,s;for(t=0;t<=1.001;t+=.05){u=1-t;px=u*u*x0+2*u*t*qx+t*t*x1;py=u*u*y0+2*u*t*qy+t*t*y1;dx=2*u*(qx-x0)+2*t*(x1-qx);dy=2*u*(qy-y0)+2*t*(y1-qy);d=Math.sqrt(dx*dx+dy*dy)||1;nx=-dy/d;ny=dx/d;s=Math.sin(Math.PI*(.05+.9*t));wd=w*Math.pow(Math.max(s,0),.42)*(t<.08?.55+t*5:1);up+=(t===0?'M':'L')+(px+nx*wd).toFixed(1)+' '+(py+ny*wd).toFixed(1);dn='L'+(px-nx*wd).toFixed(1)+' '+(py-ny*wd).toFixed(1)+dn;if(t>.07&&t<.96){vv+='M'+px.toFixed(1)+' '+py.toFixed(1)+'L'+(px+nx*wd*.97+dx/d*wd*.45).toFixed(1)+' '+(py+ny*wd*.97+dy/d*wd*.45).toFixed(1)+'M'+px.toFixed(1)+' '+py.toFixed(1)+'L'+(px-nx*wd*.97+dx/d*wd*.45).toFixed(1)+' '+(py-ny*wd*.97+dy/d*wd*.45).toFixed(1)}}return Q(up+dn+'Z',f||'url(#bn)',' stroke="#2a7a26" stroke-width=".35"')+L(vv,'#2f8a2a',.28,' opacity=".75"')+L('M'+x0+' '+y0+'Q'+qx+' '+qy+' '+x1+' '+y1,'#d9efa8',.9)}
+function pn(y,t){return '<g transform="translate(108 '+y+')"><rect width="48" height="36" rx="5" fill="#fbf8ee" stroke="#d9d0b4" stroke-width=".6"/>'+t+'</g>'}
+o='<defs><linearGradient id="sk" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#cfe8f5"/><stop offset="1" stop-color="#eef5e4"/></linearGradient><linearGradient id="lf" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#86c96f"/><stop offset="1" stop-color="#2f7a3a"/></linearGradient><linearGradient id="bn" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7bd04a"/><stop offset="1" stop-color="#2f9a2a"/></linearGradient><linearGradient id="tk" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#5a3f28"/><stop offset=".5" stop-color="#a07c56"/><stop offset="1" stop-color="#4c3420"/></linearGradient><linearGradient id="gd" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#78a64e"/><stop offset="1" stop-color="#4a6a30"/></linearGradient></defs><rect width="160" height="120" fill="#f4f0e2"/><rect width="104" height="120" fill="url(#sk)"/><ellipse cx="52" cy="108" rx="62" ry="11" fill="url(#gd)"/>';
+var l0=p.l;
+if(f0==='palm'){
+ var tx=lt==='palm'?52:56;
+ o+=Q('M47 108Q58 76 '+(tx-3.5)+' 44L'+(tx+3.5)+' 44Q63 76 57 108Z','url(#tk)');
+ for(y=52;y<104;y+=6){var xc=52+(tx-52)*(1-(y-44)/64)+3*Math.sin(y/9);o+=L('M'+(xc-3.6)+' '+y+'q3.6 2 7.2 0','#4a3220',.8)}
+ if(lt==='palm'){[-155,-120,-90,-60,-25].forEach(function(d){var a=d*Math.PI/180,ex=tx+Math.cos(a)*24,ey=44+Math.sin(a)*24+Math.abs(Math.cos(a))*4,r=15,a1=a-1.15,a2=a+1.15;o+=L('M'+tx+' 44Q'+(tx+Math.cos(a)*10)+' '+(44+Math.sin(a)*18)+' '+ex.toFixed(1)+' '+ey.toFixed(1),'#6a8a3a',1.4)+Q('M'+ex.toFixed(1)+' '+ey.toFixed(1)+'L'+(ex+Math.cos(a1)*r).toFixed(1)+' '+(ey+Math.sin(a1)*r).toFixed(1)+'A'+r+' '+r+' 0 0 1 '+(ex+Math.cos(a2)*r).toFixed(1)+' '+(ey+Math.sin(a2)*r).toFixed(1)+'Z','#3f8f45','stroke="#245c2c" stroke-width=".4"');for(var j=0;j<=8;j++){var b=a1+(a2-a1)*j/8;o+=L('M'+ex.toFixed(1)+' '+ey.toFixed(1)+'L'+(ex+Math.cos(b)*r).toFixed(1)+' '+(ey+Math.sin(b)*r).toFixed(1),'#1f5a2a',.4)}})}
+ else{[-170,-140,-110,-80,-55,-25,-5].forEach(function(d){var a=d*Math.PI/180,c=Math.cos(a);o+=frond(tx,44,tx+c*20,44+Math.sin(a)*30-6,tx+c*38,44+Math.sin(a)*22+14+Math.abs(c)*10,6)});o+=C(tx-3,47,3.4,'#7a8a30')+C(tx+3.5,48,3.4,'#6f7f2a')+C(tx,50,3.4,'#8a9a38')}
+}else if(f0==='grass'){
+ for(k=0;k<5;k++){x=26+k*13+R()*3;var tp=10+R()*12,ln=(R()-.5)*8,xt=x+ln,wb=4.4;
+  o+=Q('M'+(x-wb/2)+' '+GY+'L'+(xt-wb*.3)+' '+tp+'L'+(xt+wb*.3)+' '+tp+'L'+(x+wb/2)+' '+GY+'Z','#9cc65a')+Q('M'+(x+wb*.1)+' '+GY+'L'+(xt+wb*.05)+' '+tp+'L'+(xt+wb*.3)+' '+tp+'L'+(x+wb/2)+' '+GY+'Z','#7aa63e',' opacity=".65"')+L('M'+(x-wb*.3)+' '+GY+'L'+(xt-wb*.15)+' '+tp,'#d8eaa0',.5);
+  for(y=GY-12;y>tp+2;y-=12){var xx=x+ln*(GY-y)/(GY-tp),ww=wb*(.5+.5*(y-tp)/(GY-tp))+.4;o+=L('M'+(xx-ww)+' '+y+'h'+(ww*2),'#3f5a1a',1.5)+'<ellipse cx="'+xx.toFixed(1)+'" cy="'+(y-.6)+'" rx="'+(ww+.5).toFixed(1)+'" ry=".9" fill="#b9d878"/>';
+   if(GY-y>38){var dd=(Math.round(y/12)%2)?1:-1,bx=xx+dd*12,by2=y-5;o+=L('M'+xx.toFixed(1)+' '+y+'Q'+(xx+dd*6).toFixed(1)+' '+(y-8)+' '+bx.toFixed(1)+' '+by2,'#6a8a30',.9);for(var j=0;j<5;j++)o+=lf(bx,by2,19,2.8,90-dd*12+(j-2)*14,'#5fa94a')}}
+  for(var j=0;j<6;j++)o+=lf(xt,tp,18,2.8,55+j*14,'#5fa94a')}
+}else if(f0==='vine'){
+ o+=L('M36 '+GY+'Q30 80 48 70T70 46T80 20','#6b8a3a',1.6);o+=L('M48 '+GY+'Q58 86 52 72','#7a9a44',1.3);
+ [[40,86],[52,72],[62,58],[70,46],[76,32],[30,95],[58,92]].forEach(function(q,j){var a=-60+R()*120+(j%2?180:0);o+=L('M'+q[0]+' '+q[1]+'l'+Math.cos(a*Math.PI/180)*7+' '+Math.sin(a*Math.PI/180)*7,'#6b8a3a',.8);var bx=q[0]+Math.cos(a*Math.PI/180)*7,by=q[1]+Math.sin(a*Math.PI/180)*7;if(lt==='tri'){o+=lf(bx,by,12,4.6,a,0)+lf(bx,by,10,4,a-40)+lf(bx,by,10,4,a+40)}else if(l0.indexOf('Ipomoea')===0)o+='<g transform="translate('+bx.toFixed(1)+' '+by.toFixed(1)+') rotate('+(a-90).toFixed(0)+') scale(.75)">'+Q('M0 0C-6 -9 -16 -7 -14 2C-12 10 -4 12 0 17C4 12 12 10 14 2C16 -7 6 -9 0 0Z','url(#lf)','stroke="#245c2c" stroke-width=".4"')+L('M0 0V15','#d8ecb8',.5)+'</g>';else o+=lf(bx,by,13,6,a)});
+ if(has(p.r,'tuber'))o+='<ellipse cx="48" cy="104" rx="9" ry="5" fill="#b97a4c"/>';
+}else if(l0.indexOf('Musa')===0){
+ o+=Q('M31 '+GY+'L32.5 94L36.5 94L38 '+GY+'Z','#b9d98e','stroke="#7d9d4e" stroke-width=".5"')+cl(34.5,94,27,82,19,88,4.5,0,1);
+ o+=Q('M43 '+GY+'Q46 90 47.5 44L57 44Q58.5 90 62 '+GY+'Z','#b3d488','stroke="#7d9d4e" stroke-width=".6"');
+ for(k=0;k<4;k++)o+=L('M'+(47+k*3.4)+' '+(GY-2)+'Q'+(47.5+k*3)+' 80 '+(48.6+k*2.7)+' 46','#8fb060',.5);
+ for(k=0;k<9;k++)o+='<ellipse cx="'+(46+R()*12).toFixed(1)+'" cy="'+(72+R()*28).toFixed(1)+'" rx="'+(1+R()*1.4).toFixed(1)+'" ry="'+(2+R()*3).toFixed(1)+'" fill="#4a3a1c" opacity="'+(.2+R()*.25).toFixed(2)+'"/>';
+ o+=L('M52 44Q44 36 36 33','#7a9a44',2)+L('M52 44Q60 36 68 33','#7a9a44',2)+L('M52 44Q50 34 46 28','#7a9a44',1.8);
+ o+=bl(36,33,16,14,2,42,10)+bl(68,33,88,14,102,42,10)+bl(46,28,38,14,33,3,8)+bl(52,44,52,28,54,10,3,'#6fbf5f');
+ o+=bl(52,46,32,40,14,66,9);
+ o+=L('M57 46Q70 46 72 62','#7a9a44',2)+'<ellipse cx="72" cy="78" rx="4.2" ry="7" fill="#7a2a50"/>';
+ for(k=0;k<9;k++){var fx=66.5+(k%3)*5.5,fy=63+Math.floor(k/3)*4.6;o+='<ellipse cx="'+fx+'" cy="'+fy+'" rx="1.7" ry="4" transform="rotate('+(-22+(k%3)*22)+' '+fx+' '+fy+')" fill="#9ccc5a" stroke="#6a9a3a" stroke-width=".3"/>'}
+}else if(l0.indexOf('Moringa')===0){
+ o+=Q('M49.5 '+GY+'L50.6 20L53.4 20L54.5 '+GY+'Z','#8a7a62')+L('M51.5 '+GY+'L51.8 24','#b8a888',.6);
+ var mc=['#4f9a3f','#5fae4a','#3f8a35','#6cba55'];
+ for(k=0;k<20;k++){y=28+k*3.3;var dm=k%2?1:-1,hw=7+17*Math.sin(Math.PI*(y-20)/76),len=hw*(.7+R()*.5),ex=52+dm*len,ey=y-2+len*.22;o+=L('M52 '+(y+3)+'Q'+(52+dm*len*.5)+' '+(y-3)+' '+ex.toFixed(1)+' '+ey.toFixed(1),'#8a7a62',.8);[.55,.8,1].forEach(function(t){var bx=52+dm*len*t,by=y+3+(ey-y-3)*t-1;for(var j=0;j<5;j++)o+=C(bx+(R()-.5)*7,by+(R()-.3)*6,1.3+R()*.8,mc[Math.floor(R()*4)])})}
+}else if(l0.indexOf('Psidium')===0){
+ o+='<ellipse cx="52" cy="106" rx="38" ry="4" fill="#2f4a20" opacity=".25"/>';
+ o+=L('M62 106Q60 94 52 82Q44 72 42 60','#a8825f',6.5)+L('M61 106Q59 94 51.5 82Q44 72 41.5 60','#d6b894',2)+L('M42 60L40 56','#a8825f',3.5);
+ for(k=0;k<6;k++)o+='<ellipse cx="'+(50+R()*10-2).toFixed(1)+'" cy="'+(84+R()*18).toFixed(1)+'" rx="1.6" ry="2.4" fill="#7b8a52" opacity=".55"/>';
+ var br=[[44,70,28,64,12,74],[43,64,36,48,26,40],[42,60,48,44,60,34],[41,58,62,52,86,54],[50,80,70,74,92,68],[43,62,38,70,30,84]];
+ br.forEach(function(b){o+=L('M'+b[0]+' '+b[1]+'Q'+b[2]+' '+b[3]+' '+b[4]+' '+b[5],'#a8825f',2)});
+ br.forEach(function(b){[.35,.55,.75,1].forEach(function(t){var u=1-t,px=u*u*b[0]+2*u*t*b[2]+t*t*b[4],py=u*u*b[1]+2*u*t*b[3]+t*t*b[5];for(var j=0;j<3;j++){var ag=R()*360;o+=L('M'+px.toFixed(1)+' '+py.toFixed(1)+'l'+(Math.cos(ag*Math.PI/180)*3).toFixed(1)+' '+(Math.sin(ag*Math.PI/180)*3).toFixed(1),'#8a7a50',.6)+lf(px+Math.cos(ag*Math.PI/180)*3,py+Math.sin(ag*Math.PI/180)*3,9.5,3.6,ag)}})});
+ for(k=0;k<5;k++)o+=C(20+R()*60,52+R()*28,2.7,'#b8d86a')+C(20+R()*60,52+R()*28,2.5,'#c6e07c');
+}else if(l0.indexOf('Cassia')===0){
+ o+='<ellipse cx="52" cy="106" rx="36" ry="4" fill="#2f4a20" opacity=".25"/>';
+ o+=Q('M47 '+GY+'Q49 90 50 68L55 68Q55 90 58 '+GY+'Z','#5a4030')+L('M52 70Q42 58 30 48','#5a4030',3)+L('M53 70Q64 56 80 46','#5a4030',3)+L('M52 68Q50 50 54 32','#5a4030',2.4)+L('M40 56Q34 46 20 42','#5a4030',1.8)+L('M70 54Q80 50 92 52','#5a4030',1.8);
+ for(k=0;k<22;k++)o+=lf(52+(R()-.5)*78,40+(R()-.5)*36,9,3,R()*360,'#6fbf55');
+ var yc=['#f7c61a','#f2b705','#ffd93a','#f0a800'];
+ for(k=0;k<46;k++){var rx0=52+(R()-.5)*80,ry0=24+R()*34,rl=9+R()*9;o+=L('M'+rx0.toFixed(1)+' '+ry0.toFixed(1)+'q1.5 '+(rl/2).toFixed(1)+' '+((R()-.5)*3).toFixed(1)+' '+rl.toFixed(1),'#8a9a3a',.5);for(var j=0;j<9;j++)o+=C(rx0+(R()-.5)*3.4,ry0+j*rl/8,1.5+R()*.8,yc[Math.floor(R()*4)])}
+}else if(l0.indexOf('Falcataria')===0){
+ o+='<ellipse cx="52" cy="106" rx="34" ry="4" fill="#2f4a20" opacity=".25"/>';
+ var gk='#b9b2a2';
+ o+=Q('M47 '+GY+'Q49 90 49.5 70L54.5 70Q55 90 58 '+GY+'Z',gk)+L('M50 106V72','#d8d2c4',.7);
+ [[50,70,40,52,22,34],[54,70,64,50,82,32],[51,66,48,44,44,22],[53,64,58,42,66,20],[46,58,32,52,14,54],[58,58,72,52,90,56]].forEach(function(b){o+=L('M'+b[0]+' '+b[1]+'Q'+b[2]+' '+b[3]+' '+b[4]+' '+b[5],gk,2.2)});
+ [[22,34,20],[82,32,20],[44,22,18],[66,20,18],[14,54,12],[90,56,12],[33,44,15],[72,42,15],[53,36,16],[28,64,12],[76,66,12]].forEach(function(t){var tx2=t[0],ty=t[1],rw=t[2];o+='<ellipse cx="'+tx2+'" cy="'+(ty+1.5)+'" rx="'+rw+'" ry="5" fill="#2f7a3a"/><ellipse cx="'+tx2+'" cy="'+(ty-.5)+'" rx="'+(rw*.9).toFixed(1)+'" ry="4" fill="#4aa04f"/>';for(var j=0;j<16;j++){var lx=tx2+(R()-.5)*rw*1.8,ly=ty+(R()-.5)*7;o+=L('M'+lx.toFixed(1)+' '+ly.toFixed(1)+'l'+(2+R()*2).toFixed(1)+' -1.4','#8fd07a',.8)}});
+}else if(l0.indexOf('Colocasia')===0){
+ [[52,56,1],[34,72,.7],[70,70,.7]].forEach(function(q){o+=L('M52 '+GY+'Q'+((52+q[0])/2)+' 90 '+q[0]+' '+q[1],'#6b8a3a',1.6);o+='<g transform="translate('+q[0]+' '+q[1]+') scale('+q[2]+')">'+Q('M0 0C-24 -2 -26 -30 0 -28C26 -30 24 -2 0 0Z','url(#lf)','stroke="#245c2c" stroke-width=".4"')+L('M0 -26L0 0','#d8ecb8',.6)+L('M0 -14L-12 -14M0 -14L12 -14M0 -8L-9 -4M0 -8L9 -4','#d8ecb8',.5)+'</g>'});
+ o+='<ellipse cx="52" cy="105" rx="10" ry="5" fill="#b97a4c"/>';
+}else if(l0.indexOf('Carica')===0){
+ o+=Q('M48 '+GY+'L49 54L55 54L56 '+GY+'Z','url(#tk)');for(y=60;y<104;y+=8)o+=L('M49 '+y+'h6','#5a4028',.7);
+ [-160,-125,-90,-55,-20].forEach(function(a){var r=a*Math.PI/180,ex=52+Math.cos(r)*26,ey=54+Math.sin(r)*22;o+=L('M52 54L'+ex.toFixed(1)+' '+ey.toFixed(1),'#8a9a50',1.4);for(var j=-3;j<=3;j++)o+=lf(ex,ey,13,3.2,a+j*24)});
+ o+=C(48,58,3.2,'#f0a030')+C(56,60,3.2,'#f0a030');
+}else if(f0==='herb'||f0==='shrub'){
+ var strap=lt==='strap';
+ if(strap){o+=Q('M49 '+GY+'L50 76L55 76L56 '+GY+'Z','url(#tk)')+L('M52 86Q36 92 28 '+GY,'#6a4a30',2)+L('M52 86Q68 92 76 '+GY,'#6a4a30',2)+L('M51 90Q44 98 42 '+GY,'#6a4a30',1.6)+L('M54 90Q60 98 62 '+GY,'#6a4a30',1.6);
+ for(k=0;k<11;k++){var a=(-175+k*17)*Math.PI/180,c=Math.cos(a),sn=Math.sin(a);o+=cl(52,78,52+c*22,62+sn*30,52+c*40,78+sn*26+Math.abs(c)*22,2.6,'#4f9a46')}}
+ else{for(k=0;k<5;k++)o+=L('M52 '+GY+'Q'+(40+k*6)+' 84 '+(30+k*11)+' '+(f0==='herb'?88:52+R()*10),'#7a5a3a',1.6);
+ var hb=f0==='herb';for(k=0;k<(hb?30:34);k++){x=52+(R()-.5)*(hb?46:54);y=(hb?90:58)+(R()-.5)*(hb?14:38);var ag=R()*360;if(lt==='tri'){o+=lf(x,y,9,3.6,ag)+lf(x,y,8,3,ag-40)+lf(x,y,8,3,ag+40)}else if(lt==='pin'||lt==='bip'){o+=lf(x,y,10,3.2,ag,'#4aa04f')}else o+=lf(x,y,11,4.6,ag)}
+ if(p.fc)for(k=0;k<7;k++)o+=C(52+(R()-.5)*50,(f0==='herb'?88:58)+(R()-.5)*(f0==='herb'?12:34),3,p.fc,.95);
+ else if(l0.indexOf('Hibiscus')===0)for(k=0;k<5;k++)o+=C(52+(R()-.5)*46,58+(R()-.5)*30,3.6,'#d8302a');}
+}else{
+ var bu=has(p.r,'buttress'),um=lt==='bip',ti=p.la[0]==='spiral'&&lt==='simple',tall=!!p.G;
+ var top=tall?54:(um?64:62),cyc=tall?36:(um?42:42),W=um?86:(ti?62:(tall?50:52)),H=um?22:(tall?30:36);
+ if(has(p.r,'stilt')||has(p.r,'pneum'))o+='<ellipse cx="52" cy="106" rx="34" ry="6" fill="#8ec1d8" opacity=".7"/>';
+ if(has(p.r,'aerial'))for(k=0;k<8;k++){x=cx-28+k*8;o+=L('M'+x+' '+(cyc+12)+'Q'+(x+R()*5-2.5)+' 80 '+x+' '+GY,'#7a5a3a',1)}
+ o+=Q(bu?'M'+(cx-17)+' '+GY+'Q'+(cx-6)+' 96 '+(cx-4.8)+' 76L'+(cx-3.6)+' '+top+'L'+(cx+3.6)+' '+top+'L'+(cx+4.8)+' 76Q'+(cx+6)+' 96 '+(cx+17)+' '+GY+'Z':'M'+(cx-6.5)+' '+GY+'Q'+(cx-4)+' 82 '+(cx-3.6)+' '+top+'L'+(cx+3.6)+' '+top+'Q'+(cx+4)+' 82 '+(cx+6.5)+' '+GY+'Z','url(#tk)');
+ if(has(p.b,'fissured'))for(k=0;k<6;k++)o+=L('M'+(cx-3.2+k*1.3)+' '+(top+3)+'L'+(cx-4.5+k*1.8)+' '+(GY-3),'#3a2616',.6);
+ if(has(p.b,'flaky'))for(k=0;k<8;k++)o+='<ellipse cx="'+(cx-3+R()*6).toFixed(1)+'" cy="'+(top+8+R()*(GY-top-14)).toFixed(1)+'" rx="2" ry="1.2" fill="#d4b48a" opacity=".7"/>';
+ if(has(p.b,'thorny'))for(k=0;k<9;k++){x=cx-3+R()*6;y=top+6+R()*(GY-top-12);o+=Q('M'+x.toFixed(1)+' '+y.toFixed(1)+'l1 -3.4l1.2 3.4Z','#efe0b8')}
+ if(has(p.b,'smooth'))o+=L('M'+(cx-1.5)+' '+(top+3)+'L'+(cx-2.2)+' '+(GY-4),'#c9ab82',.8);
+ if(has(p.s,'red'))o+=C(cx+1,GY-24,1.6,'#b3261e');
+ if(has(p.r,'stilt'))[-1,1].forEach(function(d){o+=L('M'+cx+' 88Q'+(cx+d*16)+' 90 '+(cx+d*26)+' '+GY,'#6a4a30',2)+L('M'+cx+' 82Q'+(cx+d*9)+' 88 '+(cx+d*13)+' '+GY,'#6a4a30',1.6)});
+ if(has(p.r,'pneum'))for(k=0;k<9;k++){x=cx-30+k*7.5;o+=L('M'+x+' '+GY+'l0 -'+(5+R()*4),'#5a3f28',1.4)}
+ for(k=0;k<4;k++)o+=L('M'+cx+' '+(top+7)+'L'+(cx-22+k*15)+' '+(cyc+6),'#6a4a30',2.2);
+ var cols=['#2f7a3a','#3f8f45','#4aa04f'];
+ if(ti){for(k=0;k<3;k++){y=cyc-12+k*13;o+='<ellipse cx="52" cy="'+y+'" rx="'+(34-k*5)+'" ry="8" fill="'+cols[k]+'"/>'}}
+ else for(k=0;k<22;k++)o+=C(cx+(R()-.5)*W,cyc+(R()-.5)*H,(um?8:9)+R()*6,cols[k%3]);
+ for(k=0;k<10;k++)o+=C(cx+(R()-.75)*W*.8,cyc+(R()-.85)*H*.7,4+R()*3,'#9ad884',.35);
+ for(k=0;k<34;k++)o+=lf(cx+(R()-.5)*W,cyc+(R()-.5)*H,7,2.3,R()*360,'#76c466');
+ if(p.fc&&p.ft&&!p.G)for(k=0;k<14;k++)o+=C(cx+(R()-.5)*W*.9,cyc+(R()-.5)*H*.8,2.2,p.fc,.95);
+}
+o+='<rect x="105" y="0" width="55" height="120" fill="#f4f0e2"/>';
+/* panel A: leaf */
+var A='';
+if(l0.indexOf('Falcataria')===0){A=L('M24 35V9','#6a8a4a',.8);for(k=0;k<7;k++){var yy=32-k*3.5;[-1,1].forEach(function(d){var ex=24+d*(17-k*1.3),ey=yy-5-k*.1;A+=L('M24 '+yy+'L'+ex+' '+ey,'#6a8a4a',.5);for(var j=1;j<=9;j++){var qx=24+(ex-24)*j/9.5,qy=yy+(ey-yy)*j/9.5,ag=Math.atan2(ey-yy,ex-24)*180/Math.PI;A+=lf(qx,qy,3.4,1.1,ag-75,'#4f9a3f')+lf(qx,qy,3.4,1.1,ag+75,'#5fae4a')}})}}
+else if(l0.indexOf('Moringa')===0){A=L('M24 35V4','#6a8a4a',.8);for(k=0;k<5;k++){var yy=30-k*5.6,hl=20-k*2.2;[-1,1].forEach(function(d){A+=L('M24 '+yy+'L'+(24+d*hl)+' '+(yy-5-k*.4),'#7a9a5a',.6);for(var j=1;j<=6;j++){var qx=24+d*hl*j/6,qy=yy-(5+k*.4)*j/6;A+=C(qx,qy-1.5,1.5,'#4f9a3f')+C(qx,qy+1.5,1.5,'#5fae4a')}})}A+=C(24,3,1.6,'#4f9a3f')}
+else if(l0.indexOf('Bambusa')===0){A=L('M2 5Q18 2 32 7','#6a8a30',1);[7,13,19,25,31].forEach(function(x,j){A+=lf(x,5+j*.4,24,3.2,66+j*7,'#5fa94a')})}
+else if(f0==='palm'&&lt==='pin'){A=frond(3,34,6,8,45,6,6)}
+else if(l0.indexOf('Musa')===0)A=L('M1 30Q3 29 5 27','#6a8a3a',1.5)+bl(5,27,25,19.5,46,10,11.5);
+else if(lt==='simple'&&has(p.ls,'bilobed'))A=Q('M24 32C6 28 2 10 14 6C19 5 24 12 24 15C24 12 29 5 34 6C46 10 42 28 24 32Z','url(#lf)','stroke="#245c2c" stroke-width=".4"')+L('M24 32V14','#d8ecb8',.6);
+else if(lt==='simple'){var vn=p.G?p.G.vn:6,lw={ovate:14,oblong:11,elliptic:12,lanceolate:8}[(p.ls||[])[0]]||12;A=lf(3,18,42,lw,0);for(k=1;k<=vn;k++)A+=L('M'+(3+k*38/(vn+1))+' 18l5 -'+(lw*.6)+'M'+(3+k*38/(vn+1))+' 18l5 '+(lw*.6),'#d8ecb8',.5)}
+else if(lt==='pin'){A=L('M3 18L45 18','#5a8a3a',1);for(k=0;k<4;k++){A+=lf(8+k*9,18,13,4.5,-42)+lf(8+k*9,18,13,4.5,42)}A+=lf(40,18,9,3.4,0)}
+else if(lt==='bip'){A=L('M3 18L40 18','#5a8a3a',1);[8,20,32].forEach(function(x){[-1,1].forEach(function(d){var g=Math.atan2(d*13,7)*180/Math.PI;A+=L('M'+x+' 18l7 '+d*13,'#5a8a3a',.7);for(var j=1;j<=5;j++){var px=x+7*j/5,py=18+d*13*j/5;A+=lf(px,py,5.5,2,g-65)+lf(px,py,5.5,2,g+65)}})})}
+else if(lt==='tri'){A=L('M3 18L14 18','#5a8a3a',1)+lf(14,18,28,8,0)+lf(14,18,20,6,-42)+lf(14,18,20,6,42)}
+else if(lt==='palm'){[-165,-130,-95,-60,-25].forEach(function(a){A+=lf(24,34,28,4.5,a)})}
+else A=lf(2,28,44,4,-14)+lf(2,28,44,4,-30)+lf(2,28,40,3.5,-2);
+o+=pn(4,A);
+/* panel B: fruit / flower / roots */
+var Bp='';
+function wg(a,Ln){return '<g transform="rotate('+a+')">'+Q('M-2.6 0Q-5.2 '+-Ln/2+' 0 '+-Ln+'Q5.2 '+-Ln/2+' 2.6 0Z','#c9964f','stroke="#8a5a30" stroke-width=".3"')+L('M0 0L0 '+-Ln*.9,'#8a5a30',.3)+'</g>'}
+if(l0.indexOf('Moringa')===0){Bp=L('M3 10Q24 5 45 11','#3f6a35',3.4)+L('M3 17Q24 22 45 17','#4f7a3f',3.2)+L('M3 26Q24 31 45 26','#c8e090',4.2);for(k=0;k<7;k++)Bp+=C(9+k*5.2,28.2-Math.sin(k/6*Math.PI)*0.5,1.5,'#7ab04a')}
+else if(p.G){var w=p.w[0];
+ Bp='<g transform="translate(24 28)">'+(w==='l2'?wg(-12,26)+wg(12,26)+wg(-70,12)+wg(70,12)+wg(180,9):w==='l3'?wg(-28,26)+wg(0,28)+wg(28,26)+wg(-85,11)+wg(85,11):wg(0,5)+wg(72,5)+wg(144,5)+wg(216,5)+wg(288,5))+'<ellipse cx="0" cy="2" rx="'+(w==='l0'?6:4.2)+'" ry="'+(w==='l0'?6:5)+'" fill="#7a5230"/><ellipse cx="-1.2" cy="0" rx="1.2" ry="2" fill="#a67a50"/></g>'}
+else if(p.FD){var fp=p.fp[0],ft=p.ft[0],fc=p.fc,po='#8a5a30';
+ if(fp==='flat')Bp+='<rect x="15" y="14" width="30" height="8" rx="4" fill="'+po+'"/>'+[21,27,33,39].map(function(x){return C(x,18,2,'#c9a06a')}).join('');
+ else if(fp==='cyl')Bp+=L('M14 28Q26 8 45 13',po,5);
+ else if(fp==='coil')Bp+=L('M16 10C42 8 42 24 28 24C14 24 18 33 40 32',po,4);
+ else if(fp==='wing')Bp+=Q('M14 18Q18 10 22 18Q26 10 30 18Q34 10 38 18L44 18L44 24L38 24Q34 32 30 24Q26 32 22 24Q18 32 14 24Z',po);
+ else Bp+='<rect x="0" y="24" width="48" height="12" fill="#7a5a3a" opacity=".5"/><ellipse cx="30" cy="30" rx="7" ry="4" fill="#d8b878"/><ellipse cx="40" cy="28" rx="6" ry="3.6" fill="#d8b878"/>'+L('M28 24V14','#4aa04f',1.4);
+ if(ft==='pea')Bp+='<ellipse cx="8" cy="9" rx="3.4" ry="4" fill="'+fc+'"/><ellipse cx="4" cy="14" rx="3" ry="2.4" fill="'+fc+'"/><ellipse cx="12" cy="14" rx="3" ry="2.4" fill="'+fc+'"/>';
+ else if(ft==='puff'){for(k=0;k<12;k++)Bp+=L('M8 11l'+(5.5*Math.cos(k*Math.PI/6)).toFixed(1)+' '+(5.5*Math.sin(k*Math.PI/6)).toFixed(1),fc,1.2);Bp+=C(8,11,1.6,fc)}
+ else{for(k=0;k<5;k++)Bp+='<ellipse transform="rotate('+k*72+' 8 11)" cx="8" cy="6" rx="2.8" ry="4.4" fill="'+fc+'"/>';Bp+=C(8,11,1.4,'#e0a020')}
+}else{var r0=p.r[0];Bp='<rect x="0" y="0" width="48" height="9" fill="#78a64e"/>';
+ if(r0==='tap')Bp+=L('M24 9V32','#8a6240',2.4)+L('M24 16l-8 6M24 21l9 5M24 27l-6 4','#8a6240',1.2);
+ else if(r0==='fibrous')for(k=0;k<9;k++)Bp+=L('M24 9Q'+(10+k*3.5)+' 20 '+(6+k*4.5)+' 31','#8a6240',1);
+ else if(r0==='stilt')Bp+=L('M24 4Q10 12 8 33M24 4Q38 12 40 33M24 6Q20 16 18 33M24 6Q28 16 30 33','#8a6240',1.8);
+ else if(r0==='aerial')for(k=0;k<7;k++)Bp+=L('M'+(8+k*5.4)+' 0V33','#8a6240',1);
+ else if(r0==='pneum')Bp+='<rect x="0" y="22" width="48" height="14" fill="#8ec1d8" opacity=".6"/>'+[8,15,22,29,36].map(function(x){return L('M'+x+' 32V19','#5a3f28',2)}).join('');
+ else if(r0==='tuber')Bp+='<ellipse cx="24" cy="22" rx="12" ry="7" fill="#b97a4c"/>'+L('M24 15V9M12 24l-6 6M36 24l6 6','#8a6240',1);
+ else Bp+=Q('M6 30L16 12L19 9L29 9L32 12L42 30Z','#9a7550')+L('M24 9V30','#6a4a30',.8)}
+o+=pn(42,Bp);
+/* panel C: bark */
+var bk=has(p.b,'fissured')?'fissured':has(p.b,'flaky')?'flaky':has(p.b,'thorny')?'thorny':has(p.b,'ringed')?'ringed':has(p.b,'soft')?'soft':'smooth',bc={fissured:'#6b4a30',flaky:'#8a6a48',thorny:'#8a7a5a',ringed:'#7a6040',soft:'#b5d58a',smooth:'#a89c86'},Cb='<rect x="3" y="3" width="42" height="30" rx="3" fill="'+bc[bk]+'"/>';
+if(bk==='fissured')for(k=0;k<9;k++)Cb+=L('M'+(6+k*4.5)+' 3Q'+(8+k*4.5)+' 18 '+(6+k*4.5)+' 33','#2e1c0e',.9);
+else if(bk==='flaky')for(k=0;k<14;k++)Cb+='<ellipse cx="'+(8+R()*32).toFixed(1)+'" cy="'+(7+R()*22).toFixed(1)+'" rx="4.5" ry="2.4" fill="#cdb08a" opacity=".65"/>';
+else if(bk==='thorny')for(k=0;k<10;k++){x=7+R()*32;y=8+R()*20;Cb+=Q('M'+x.toFixed(1)+' '+(y+5).toFixed(1)+'l2.4 -8l2.4 8Z','#efe0b8')}
+else if(bk==='ringed')for(k=0;k<6;k++)Cb+=L('M3 '+(8+k*5)+'q21 3 42 0','#3a2616',1.2);
+else if(bk==='soft')for(k=0;k<8;k++)Cb+=L('M'+(7+k*5)+' 3V33','#e4f2c4',.8);
+else Cb+=L('M12 6Q15 18 12 31M30 5Q33 17 30 30','#d8ccb4',1.6);
+if(l0.indexOf('Falcataria')===0)Cb='<rect x="3" y="3" width="42" height="30" rx="3" fill="#c4bdae"/><rect x="3" y="3" width="14" height="30" rx="3" fill="#d3cdbf" opacity=".6"/>'+L('M9 12h8M26 8h9M14 21h10M30 24h9M8 29h6M33 15h8','#8a8272',.8);
+o+=pn(80,Cb);
+return '<svg class="pic wide" viewBox="0 0 160 120" role="img" aria-label="Illustration of '+p.n+': plant, leaf, fruit or roots, and bark">'+o+'</svg>';
+}
+
+var sel={};
+function has(a,v){return !!a&&a.indexOf(v)>-1}
+function render(){
+  var f=document.getElementById("filters");f.innerHTML="";
+  CATS.forEach(function(c){
+    var d=document.createElement("div");d.className="cat";
+    d.innerHTML="<h3>"+c.t+"</h3><p>"+c.h+"</p>";
+    var w=document.createElement("div");w.className="chips";
+    Object.keys(c.o).forEach(function(v){
+      var b=document.createElement("button");b.className="chip";b.textContent=c.o[v];
+      b.setAttribute("aria-pressed",sel[c.k]===v);
+      b.onclick=function(){if(sel[c.k]===v)delete sel[c.k];else sel[c.k]=v;render()};
+      w.appendChild(b)});
+    d.appendChild(w);f.appendChild(d)});
+  var keys=Object.keys(sel),out=document.getElementById("results");out.innerHTML="";
+  var rows=P.map(function(p){
+    var hit=[],miss=[];
+    keys.forEach(function(k){var c=CATS.filter(function(x){return x.k===k})[0];
+      (has(p[k],sel[k])?hit:miss).push(c.o[sel[k]])});
+    return {p:p,hit:hit,miss:miss,sc:keys.length?hit.length/keys.length:0}});
+  if(keys.length){rows=rows.filter(function(r){return r.hit.length>0}).sort(function(a,b){return b.sc-a.sc})}
+  document.getElementById("count").textContent=keys.length?rows.length+" possible match"+(rows.length===1?"":"es"):"All "+P.length+" plants – choose traits to narrow down";
+  if(!rows.length){out.innerHTML='<div class="empty">No plants match those traits. Try clearing one filter; features can vary with age and growing conditions.</div>';return}
+  rows.forEach(function(r){
+    var p=r.p,e=document.createElement("div");e.className="res";
+    var pct=Math.round(r.sc*100);
+    var tags=r.hit.map(function(t){return '<span class="tag">✓ '+t+'</span>'}).join("")+r.miss.map(function(t){return '<span class="tag no">'+t+'</span>'}).join("");
+    e.innerHTML=art(p)+'<div class="rb"><div class="top"><h4>'+p.n+'</h4>'+(keys.length?'<span class="pct">'+pct+'%</span>':'')+'</div><i>'+p.l+'</i>'+
+      (keys.length?'<div class="meter"><div style="width:'+pct+'%"></div></div>'+tags:'')+
+      '<p class="note"><b>Remarks:</b> '+p.note+'</p>'+det(p)+'</div>';
+    out.appendChild(e)});
+}
+document.getElementById("reset").onclick=function(){sel={};render()};
+render();
+</script>
+</body>
+</html>
